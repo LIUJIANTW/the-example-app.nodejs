@@ -1,0 +1,45 @@
+pipeline {
+    agent {
+        kubernetes {
+            label 'tw-notification-admin-fontend'
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: dxci
+spec:
+  containers:
+  - name: npm
+    image: node:carbon-jessie
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: cache
+      mountPath: /root/.npm
+    securityContext:
+      runAsUser: 0
+      privileged: true
+  volumes:
+  - name: cache
+    hostPath:
+      path: /var/tmp
+  imagePullSecrets:
+  - name: regcred
+"""
+        }
+    }
+
+    stages {
+        stage('Install Build') {
+            steps {
+                container('npm') {
+                    sh 'npm install'
+                    sh 'npm run build:dev'
+                }
+            }
+        }
+
+    }
+}
